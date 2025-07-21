@@ -1,6 +1,10 @@
+# Docker Compose configuration for the proto_loc analytics platform
+# This file defines the services, networks, and volumes that make up the platform.
 version: '3.8'
 
 services:
+  # Dagster: Data Orchestrator
+  # Handles the scheduling and execution of data pipelines.
   dagster:
     build:
       context: ./03_dagster
@@ -8,10 +12,16 @@ services:
     ports:
       - "${DAGSTER_PORT:-3000}:3000"
     volumes:
+      # Mounts the local Dagster code into the container for development
       - ./03_dagster:/app/03_dagster
+      # Mounts the DuckDB databases for access by Dagster
       - ./02_duck_db:/app/02_duck_db
+      # Mounts the source data for ingestion
       - ./01_source_data:/app/01_source_data
+      # Persists Dagster's run history and metadata
+      - dagster_data:/opt/dagster/dagster_home
     environment:
+      - DAGSTER_HOME=/opt/dagster/dagster_home
       - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
       - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
       - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
@@ -19,12 +29,16 @@ services:
       - proto_loc_network
     restart: unless-stopped
 
+  # dbt: Data Transformation Tool
+  # Enables data transformation using SQL-based models.
   dbt:
     build:
       context: ./04_dbt
       dockerfile: Dockerfile
     volumes:
+      # Mounts the local dbt code into the container for development
       - ./04_dbt:/app/04_dbt
+      # Mounts the DuckDB databases for access by dbt
       - ./02_duck_db:/app/02_duck_db
     environment:
       - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
@@ -34,6 +48,8 @@ services:
       - proto_loc_network
     restart: unless-stopped
 
+  # Superset: Data Visualization and BI Platform
+  # Used for creating interactive dashboards and charts.
   superset:
     build:
       context: ./06_superset
@@ -41,33 +57,52 @@ services:
     ports:
       - "${SUPERSET_PORT:-8088}:8088"
     volumes:
+      # Mounts the local Superset configuration for development
       - ./06_superset:/app/superset
+      # Mounts the DuckDB databases in read-only mode for security
       - ./02_duck_db:/app/02_duck_db:ro
+      # Persists Superset's metadata, dashboards, and charts
+      - superset_data:/app/superset_home
     environment:
       - SUPERSET_PORT=${SUPERSET_PORT:-8088}
+      - SUPERSET_CONFIG_PATH=/app/superset_home
       - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
       - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
       - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
     networks:
       - proto_loc_network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
-  cube:
-    build:
-      context: ./05_cube_dev
-      dockerfile: Dockerfile
-    ports:
-      - "${CUBE_PORT:-4000}:4000"
-    volumes:
-      - ./05_cube_dev:/app/05_cube_dev
-      - ./02_duck_db:/app/02_duck_db:ro
-    environment:
-      - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
-      - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
-    networks:
-      - proto_loc_network
-    restart: unless-stopped
+  # Cube: Semantic Layer
+  # Provides a consistent data model for analytics.
+  # TEMPORARILY DISABLED: Cube service has npm dependency conflicts
+  # TODO: Debug and resolve @cubejs-backend package version issues
+  # cube:
+  #   build:
+  #     context: ./05_cube_dev
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "${CUBE_PORT:-4000}:4000"
+  #   volumes:
+  #     # Mounts the local Cube configuration for development
+  #     - ./05_cube_dev:/app/05_cube_dev
+  #     # Mounts the DuckDB databases in read-only mode
+  #     - ./02_duck_db:/app/02_duck_db:ro
+  #   environment:
+  #     - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
+  #     - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
+  #   networks:
+  #     - proto_loc_network
+  #   restart: unless-stopped
 
+  # Jupyter: Interactive Computing Environment
+  # Used for data exploration and AI-powered analysis with PandasAI.
   jupyter:
     build:
       context: ./07_pandas_ai
@@ -75,12 +110,18 @@ services:
     ports:
       - "${JUPYTER_PORT:-8888}:8888"
     volumes:
+      # Mounts the local Jupyter notebooks and scripts for development
       - ./07_pandas_ai:/app/07_pandas_ai
+      # Mounts the DuckDB databases for access from notebooks
       - ./02_duck_db:/app/02_duck_db
+      # Mounts the source data for analysis
       - ./01_source_data:/app/01_source_data
     environment:
       - JUPYTER_PORT=${JUPYTER_PORT:-8888}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
       - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
       - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
@@ -88,6 +129,20 @@ services:
       - proto_loc_network
     restart: unless-stopped
 
+  # Test Runner: Containerized Test Environment
+  # REMOVED: Test runner was used for initial platform validation
+  # The test artifacts have been cleaned up as they are no longer needed
+
+# Named volumes for data persistence
+volumes:
+  # Persists Dagster's run history, logs, and metadata
+  dagster_data:
+    driver: local
+  # Persists Superset's metadata, dashboards, and charts
+  superset_data:
+    driver: local
+
+# Shared network for all services
 networks:
   proto_loc_network:
     driver: bridge

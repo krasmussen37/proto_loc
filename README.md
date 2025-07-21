@@ -2,15 +2,47 @@
 
 A full-stack, local-first analytics and AI platform that mirrors enterprise cloud capabilities. Built for rapid prototyping, training, and community demonstration.
 
+## Phase 1: Stable and Persistent Infrastructure
+
+This initial phase focused on building a robust and reliable platform foundation. All services are now containerized, with persistent data storage and health checks to ensure stability.
+
+### Key Features
+- **Dockerized Services**: All components (Dagster, dbt, Superset, Cube, Jupyter) run in isolated Docker containers.
+- **Persistent Data**: Dagster and Superset now use named volumes to persist data across container restarts.
+- **Health Checks**: Superset includes a health check to ensure it is running correctly.
+- **Dependency Management**: All Python and Node.js dependencies have been resolved for a stable build.
+- **Automated Testing**: A containerized test suite is available to validate the platform's stability.
+
 ## Quick Start
 
-1. Clone the repository
-2. Copy `.env.example` to `.env` and configure your API keys
-3. Run `docker-compose up`
-4. Access services:
-   - Dagster: http://localhost:3000
-   - Superset: http://localhost:8088
-   - Jupyter: http://localhost:8888
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/krasmussen37/proto_loc.git
+    cd proto_loc
+    ```
+2.  **Configure Environment**:
+    Copy the `.env.example` file to `.env` and add your API keys for AI services.
+    ```bash
+    cp .env.example .env
+    ```
+3.  **Launch the Platform**:
+    ```bash
+    docker-compose up -d
+    ```
+4.  **Access Services**:
+    - **Dagster**: http://localhost:3000 (for data orchestration)
+    - **Superset**: http://localhost:8088 (for BI and visualization)
+    - **Jupyter**: http://localhost:8888 (for AI-powered analysis)
+    - **Cube**: http://localhost:4000 (for the semantic layer)
+
+## Next Steps: Phase 2 - End-to-End Pipeline Validation
+
+The next phase will focus on implementing a simple data pipeline using NYC taxi data to validate that all services are working together seamlessly. This will involve:
+- Ingesting raw data using Dagster
+- Transforming the data with dbt
+- Defining a semantic layer in Cube
+- Visualizing the results in Superset
+- Performing AI-powered analysis in Jupyter with PandasAI
 
 ## Project Structure
 
@@ -27,50 +59,9 @@ proto_loc/
 ├── 05_cube_dev/         # Semantic layer
 ├── 06_superset/         # BI and visualization
 ├── 07_pandas_ai/        # AI-powered analytics
-├── other/               # Supporting code
+├── other/               # Supporting code and workplan
 └── README.md
 ```
-
-## Development Phases
-
-### Phase 1: Infrastructure Setup
-Complete - All services configured and ready for data
-
-### Phase 2: Analytics Development
-In progress - NYC taxi data pipeline and dashboards
-
-## Services
-
-- **DuckDB**: Embedded analytical database
-- **Dagster**: Data orchestration and pipeline management
-- **dbt**: Data transformation framework
-- **Cube**: Semantic layer and API
-- **Superset**: Business intelligence and visualization
-- **PandasAI**: AI-powered data analysis
-
-## Configuration
-
-See `.env.example` for required environment variables.
-
-## Updating Dependencies
-
-To update tools:
-1. Check release notes for breaking changes
-2. Update version in requirements.txt
-3. Rebuild: `docker-compose build --no-cache`
-4. Test with validation notebook
-5. Run in dev environment first
-
-## Troubleshooting
-
-- **Database locks**: Use read-only mode for viewers; route writes through Dagster
-- **Service not starting**: Check docker logs with `docker-compose logs`
-- **API key issues**: Verify .env and restart services
-- **Connectivity**: Run network test in validation notebook
-
-## DuckDB Concurrency Notes
-
-DuckDB supports single-writer/multiple-readers. Superset/Cube are read-only. For writes, use Dagster/dbt. If locks occur, consider PostgreSQL for high concurrency.
 
 ## License
 
