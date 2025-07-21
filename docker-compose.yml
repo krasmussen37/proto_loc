@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  dagster:
+    build:
+      context: ./03_dagster
+      dockerfile: Dockerfile
+    ports:
+      - "${DAGSTER_PORT:-3000}:3000"
+    volumes:
+      - ./03_dagster:/app/03_dagster
+      - ./02_duck_db:/app/02_duck_db
+      - ./01_source_data:/app/01_source_data
+    environment:
+      - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
+      - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
+      - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
+    networks:
+      - proto_loc_network
+    restart: unless-stopped
+
+  dbt:
+    build:
+      context: ./04_dbt
+      dockerfile: Dockerfile
+    volumes:
+      - ./04_dbt:/app/04_dbt
+      - ./02_duck_db:/app/02_duck_db
+    environment:
+      - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
+      - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
+      - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
+    networks:
+      - proto_loc_network
+    restart: unless-stopped
+
+  superset:
+    build:
+      context: ./06_superset
+      dockerfile: Dockerfile
+    ports:
+      - "${SUPERSET_PORT:-8088}:8088"
+    volumes:
+      - ./06_superset:/app/superset
+      - ./02_duck_db:/app/02_duck_db:ro
+    environment:
+      - SUPERSET_PORT=${SUPERSET_PORT:-8088}
+      - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
+      - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
+      - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
+    networks:
+      - proto_loc_network
+    restart: unless-stopped
+
+  cube:
+    build:
+      context: ./05_cube_dev
+      dockerfile: Dockerfile
+    ports:
+      - "${CUBE_PORT:-4000}:4000"
+    volumes:
+      - ./05_cube_dev:/app/05_cube_dev
+      - ./02_duck_db:/app/02_duck_db:ro
+    environment:
+      - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
+      - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
+    networks:
+      - proto_loc_network
+    restart: unless-stopped
+
+  jupyter:
+    build:
+      context: ./07_pandas_ai
+      dockerfile: Dockerfile
+    ports:
+      - "${JUPYTER_PORT:-8888}:8888"
+    volumes:
+      - ./07_pandas_ai:/app/07_pandas_ai
+      - ./02_duck_db:/app/02_duck_db
+      - ./01_source_data:/app/01_source_data
+    environment:
+      - JUPYTER_PORT=${JUPYTER_PORT:-8888}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
+      - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
+      - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
+    networks:
+      - proto_loc_network
+    restart: unless-stopped
+
+networks:
+  proto_loc_network:
+    driver: bridge
