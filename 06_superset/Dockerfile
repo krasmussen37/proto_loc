@@ -1,3 +1,4 @@
+
 FROM python:3.11-slim
 
 # Install system dependencies
@@ -35,8 +36,11 @@ USER superset
 ENV SUPERSET_CONFIG_PATH=/app/superset_config.py
 ENV FLASK_APP=superset
 
+
 # Expose port
 EXPOSE 8088
 
+
 # Use entrypoint script
 CMD ["/app/entrypoint.sh"]
+

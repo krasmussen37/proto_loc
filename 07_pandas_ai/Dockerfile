@@ -7,6 +7,12 @@ RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     curl \
+    pkg-config \
+    libfreetype6-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libffi-dev \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies

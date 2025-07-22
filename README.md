@@ -2,13 +2,6 @@
 
 A full-stack, local-first analytics and AI platform that mirrors enterprise cloud capabilities. Built for rapid prototyping, training, and community demonstration.
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Docker Desktop 4.27.0 or newer (recommended for optimal performance)
-- Git for cloning the repository
-- At least 4GB RAM available for containers
-
 ### Setup Steps
 1. **Clone the repository**
    ```bash

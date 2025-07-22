@@ -1,6 +1,7 @@
 """
 Dagster definitions for proto_loc analytics platform
 
+
 This file contains the data pipeline definitions for the platform.
 NYC Taxi data ingestion and validation assets.
 
@@ -9,6 +10,7 @@ Key Design Principles:
 - Retry logic for handling concurrent access conflicts
 - Clear separation between raw data ingestion and validation
 - Environment-aware database path configuration
+
 """
 
 import os
@@ -46,6 +48,7 @@ def connect_with_retry(db_path: str, read_only: bool = False, max_retries: int =
                 continue
             else:
                 raise e
+
 
 @asset(group_name="raw_data_ingestion")
 def taxi_trips_raw(context: AssetExecutionContext) -> None:
@@ -182,15 +185,19 @@ def raw_data_validation(context: AssetExecutionContext) -> None:
             
         context.log.info("✅ Raw data validation completed")
         
+
     finally:
         conn.close()
 
 from dagster import Definitions
 
+# Define all assets for Dagster
 defs = Definitions(
     assets=[
+
         taxi_trips_raw,
         taxi_zones_raw, 
         raw_data_validation
+
     ],
 )
