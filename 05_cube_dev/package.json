@@ -4,17 +4,13 @@
   "description": "Cube.js semantic layer for proto_loc analytics platform",
   "main": "index.js",
   "scripts": {
-    "dev": "cubejs dev",
-    "build": "cubejs build",
-    "start": "cubejs server"
+    "dev": "node server.js",
+    "build": "echo 'No build step required'",
+    "start": "node server.js"
   },
   "dependencies": {
-    "@cubejs-backend/core": "^0.35.0",
-    "@cubejs-backend/duckdb-driver": "^0.35.0",
-    "@cubejs-backend/server": "^0.35.0",
-    "cubejs-cli": "^1.3.40"
+    "@cubejs-backend/server": "1.3.41",
+    "@cubejs-backend/duckdb-driver": "1.3.41"
   },
-  "devDependencies": {
-    "@cubejs-backend/dev-tools": "^0.35.0"
-  }
+  "devDependencies": {}
 }

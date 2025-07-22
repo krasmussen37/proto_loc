@@ -1,17 +1,23 @@
-version: '3.8'
-
 services:
+  # Data Orchestration Service - Manages ETL/ELT pipelines and asset materialization
   dagster:
     build:
       context: ./03_dagster
       dockerfile: Dockerfile
+    command: dagster dev -h 0.0.0.0 -f /app/definitions.py  # Run Dagster webserver + daemon
     ports:
-      - "${DAGSTER_PORT:-3000}:3000"
+      - "${DAGSTER_PORT:-3000}:3000"  # Expose Dagster UI on configurable port (default: 3000)
     volumes:
-      - ./03_dagster:/app/03_dagster
+      # Mount project code for live development
+      - ./03_dagster:/app
+      # Mount DuckDB databases for read/write access
       - ./02_duck_db:/app/02_duck_db
+      # Mount source data directory for ingestion
       - ./01_source_data:/app/01_source_data
+      # Mount Dagster home for persistent run history, schedules, and metadata
+      - ./03_dagster/dagster_home:/opt/dagster/dagster_home
     environment:
+      # Database path configuration - allows environment-specific overrides
       - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
       - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
       - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
@@ -19,14 +25,18 @@ services:
       - proto_loc_network
     restart: unless-stopped
 
+  # Data Transformation Service - SQL-based data modeling with dbt
   dbt:
     build:
       context: ./04_dbt
       dockerfile: Dockerfile
     volumes:
+      # Mount dbt project for live development
       - ./04_dbt:/app/04_dbt
+      # Mount DuckDB databases for transformation operations
       - ./02_duck_db:/app/02_duck_db
     environment:
+      # Database path configuration for dbt profiles
       - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
       - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
       - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
@@ -34,17 +44,23 @@ services:
       - proto_loc_network
     restart: unless-stopped
 
+  # Business Intelligence Service - Dashboards and visualization
   superset:
     build:
       context: ./06_superset
       dockerfile: Dockerfile
     ports:
-      - "${SUPERSET_PORT:-8088}:8088"
+      - "${SUPERSET_PORT:-8088}:8088"  # Expose Superset UI on configurable port (default: 8088)
     volumes:
+      # Mount Superset configuration
       - ./06_superset:/app/superset
+      # Mount DuckDB databases in read-only mode for safety
       - ./02_duck_db:/app/02_duck_db:ro
+      # Mount persistent data directory for dashboards, connections, and user data
+      - ./06_superset/data:/home/superset/.superset
     environment:
       - SUPERSET_PORT=${SUPERSET_PORT:-8088}
+      # Database path configuration for Superset connections
       - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
       - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
       - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
@@ -52,35 +68,45 @@ services:
       - proto_loc_network
     restart: unless-stopped
 
+  # Semantic Layer Service - Metrics and API layer
   cube:
     build:
       context: ./05_cube_dev
       dockerfile: Dockerfile
     ports:
-      - "${CUBE_PORT:-4000}:4000"
+      - "${CUBE_PORT:-4000}:4000"  # Expose Cube API on configurable port (default: 4000)
     volumes:
+      # Mount Cube schema definitions for live development
       - ./05_cube_dev:/app/05_cube_dev
+      # Mount DuckDB databases in read-only mode (Cube only reads from prod)
       - ./02_duck_db:/app/02_duck_db:ro
     environment:
-      - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
-      - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
+      - CUBEJS_DB_TYPE=duckdb
+      # Cube connects only to production database for stable API
+      - CUBEJS_DB_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
     networks:
       - proto_loc_network
     restart: unless-stopped
 
+  # AI Analysis Service - Jupyter notebooks with PandasAI integration
   jupyter:
     build:
       context: ./07_pandas_ai
       dockerfile: Dockerfile
     ports:
-      - "${JUPYTER_PORT:-8888}:8888"
+      - "${JUPYTER_PORT:-8888}:8888"  # Expose JupyterLab on configurable port (default: 8888)
     volumes:
+      # Mount notebooks directory for persistent development
       - ./07_pandas_ai:/app/07_pandas_ai
+      # Mount DuckDB databases for analysis (can read/write for experimentation)
       - ./02_duck_db:/app/02_duck_db
+      # Mount source data for direct analysis
       - ./01_source_data:/app/01_source_data
     environment:
       - JUPYTER_PORT=${JUPYTER_PORT:-8888}
+      # API key for PandasAI LLM integration
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Database path configuration for notebook connections
       - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
       - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
       - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}

@@ -1,22 +1,42 @@
-FROM apache/superset:4.0.2
+FROM python:3.11-slim
 
-# Switch to root to install dependencies
-USER root
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install DuckDB driver
-RUN pip install duckdb==1.1.3
+# Create superset user with home directory
+RUN groupadd -r superset && useradd -r -g superset -d /home/superset -m superset
 
-# Switch back to superset user
-USER superset
+# Install Python packages with compatible versions
+RUN pip install --upgrade pip && \
+    pip install "marshmallow<3.19.0" && \
+    pip install apache-superset==4.1.1 && \
+    pip install duckdb==1.3.2 && \
+    pip install duckdb-engine
 
-# Copy custom configuration
+# Create app directory
+RUN mkdir -p /app && chown superset:superset /app
+WORKDIR /app
+
+# Copy custom configuration and entrypoint script
 COPY superset_config.py /app/superset_config.py
+COPY entrypoint.sh /app/entrypoint.sh
+
+# Make entrypoint script executable
+RUN chmod +x /app/entrypoint.sh && chown superset:superset /app/entrypoint.sh
+
+# Switch to superset user
+USER superset
 
 # Set environment variables
 ENV SUPERSET_CONFIG_PATH=/app/superset_config.py
+ENV FLASK_APP=superset
 
 # Expose port
 EXPOSE 8088
 
-# Start Superset
-CMD ["superset", "run", "-h", "0.0.0.0", "-p", "8088", "--with-threads", "--reload", "--debugger"]
+# Use entrypoint script
+CMD ["/app/entrypoint.sh"]
