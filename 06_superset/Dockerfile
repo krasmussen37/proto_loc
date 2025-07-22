@@ -1,28 +1,42 @@
-# Base image for the Superset service
+# Minimal Superset 4.0.2 with DuckDB support and admin user initialization
 FROM apache/superset:4.0.2
 
-# Switch to root to install dependencies
+# Switch to root to install DuckDB driver and setup initialization
 USER root
 
-# Install the DuckDB driver for connecting to DuckDB databases
-RUN pip install duckdb==1.1.3
+# Install DuckDB driver and SQLAlchemy connector for connecting to DuckDB databases
+RUN pip install duckdb==1.1.3 duckdb_engine
 
-# Create the Superset home directory for persistent storage and set permissions
-RUN mkdir -p /app/superset_home && \
-    chown -R superset:superset /app/superset_home
+# Create initialization script for admin user setup
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "Initializing Superset..."\n\
+\n\
+# Initialize the database\n\
+superset db upgrade\n\
+\n\
+# Create admin user if it does not exist\n\
+superset fab create-admin \\\n\
+    --username admin \\\n\
+    --firstname Admin \\\n\
+    --lastname User \\\n\
+    --email admin@example.com \\\n\
+    --password admin || echo "Admin user already exists or creation failed - continuing..."\n\
+\n\
+# Initialize roles and permissions\n\
+superset init\n\
+\n\
+echo "Superset initialization complete. Starting server..."\n\
+\n\
+# Start Superset server\n\
+exec gunicorn --bind 0.0.0.0:8088 --access-logfile - --error-logfile - --workers 1 --worker-class gthread --threads 20 --timeout 60 --keep-alive 2 --max-requests 1000 --max-requests-jitter 100 --preload "superset.app:create_app()"\n\
+' > /app/init-superset.sh && chmod +x /app/init-superset.sh
 
-# Switch back to the superset user
-USER superset
+# Keep running as root for file permissions in development
+# USER superset  # Commented out to allow access to mounted DuckDB files
 
-# Copy the custom Superset configuration file
-COPY superset_config.py /app/superset_config.py
-
-# Set environment variables for Superset configuration and home directory
-ENV SUPERSET_CONFIG_PATH=/app/superset_config.py
-ENV SUPERSET_HOME=/app/superset_home
-
-# Expose the port for the Superset UI
+# Expose port
 EXPOSE 8088
 
-# Initialize the Superset database, create an admin user, and start the server
-CMD ["sh", "-c", "superset db upgrade && superset fab create-admin --username admin --firstname Admin --lastname User --email admin@admin.com --password admin && superset init && superset run -h 0.0.0.0 -p 8088 --with-threads --reload --debugger"]
+# Use our initialization script as the entry point
+CMD ["/app/init-superset.sh"]

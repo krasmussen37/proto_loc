@@ -5,21 +5,28 @@ This document defines the standards and best practices for data ingestion and in
 ## Core Principles
 
 ### 1. Dagster-First Approach
-- **All data ingestion** must be orchestrated through Dagster assets
-- Raw data files should never be manually imported or processed outside of Dagster
-- Each data source should have its own dedicated Dagster asset for ingestion
-- Use Dagster's dependency management to ensure proper execution order
+- **All data ingestion** must be orchestrated through Dagster assets.
+- Raw data files should never be manually imported or processed outside of Dagster.
+- Each data source should have its own dedicated Dagster asset for ingestion.
+- Use Dagster's dependency management to ensure proper execution order.
 
 ### 2. DuckDB as the Primary Data Store
 - All ingested data lands in DuckDB databases following our three-tier architecture:
-  - **Raw Layer**: `raw.duckdb` - Untouched source data
-  - **Dev Layer**: `dev.duckdb` - Development and staging transformations
-  - **Prod Layer**: `prod.duckdb` - Production-ready data models
+  - **Raw Layer**: `raw.duckdb` - Untouched source data.
+  - **Dev Layer**: `dev.duckdb` - Development and staging transformations.
+  - **Prod Layer**: `prod.duckdb` - Production-ready data models.
 
 ### 3. Schema-First Organization
-- Raw data is organized by **data source** using dedicated schemas
-- Each source system (e.g., `nyc_taxi_data`, `crm_system`) gets its own schema in raw.duckdb
-- This prevents naming conflicts and provides clear data lineage
+- Raw data is organized by **data source** using dedicated schemas.
+- Each source system (e.g., `nyc_taxi_data`, `crm_system`) gets its own schema in `raw.duckdb`.
+- This prevents naming conflicts and provides clear data lineage.
+
+### 4. DuckDB Locking Considerations
+- **Understanding the Constraint**: DuckDB is an embedded database that supports multiple concurrent *readers* but only **one active writer** at any given time for a single `.duckdb` file. Attempting concurrent writes to the same database file will result in a lock error.
+- **Handling Concurrent Writes in Dagster**:
+    - **Sequential Materialization**: When multiple Dagster assets write to the same DuckDB database (e.g., `raw.duckdb`), ensure they are materialized sequentially. Dagster's asset dependencies can enforce this order.
+    - **Consolidated Write Operations**: For raw ingestion into a single database, consider consolidating multiple raw table creations into a single Dagster asset or a single job that executes these operations sequentially. This guarantees only one write operation is active at a time.
+- **Read-Only Connections**: Tools like Superset and Cube **must** connect to DuckDB databases in read-only mode to prevent them from inadvertently attempting write operations and causing file locks. Ensure SQLAlchemy connection strings include `?read_only=true` or similar parameters.
 
 ## Technical Implementation Standards
 

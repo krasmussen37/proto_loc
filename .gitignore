@@ -45,8 +45,12 @@ logs/
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb_checkpoints/
+*.ipynb # Ignore all Jupyter notebooks by default
 
 # dbt
 target/
 dbt_packages/
 logs/
+
+# Node.js dependencies
+node_modules/
