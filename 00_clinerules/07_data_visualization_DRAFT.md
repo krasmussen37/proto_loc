@@ -1,5 +1,9 @@
 # Data Visualization Guidelines (proto_loc Analytics Platform)
 
+## Future considerations
+- [ ]  [ OPEN ]
+
+----
 This document outlines the standards and best practices for implementing data visualization and business intelligence capabilities within the proto_loc platform, specifically focusing on Apache Superset integration with DuckDB.
 
 ## Overview

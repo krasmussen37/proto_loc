@@ -1,5 +1,9 @@
 # DevSecOps Guidelines (proto_loc Analytics Platform)
 
+## Future considerations
+- [ ]  MCP rules of engagement during development
+
+----
 ## Overview
 
 - **Clean Repository Structure:** Keep the top-level directory tidy. Aside from designated folders, the only file at the root should be **`README.md`**. Organize all content into the prescribed directories (e.g. `01_source_data/`, `02_duck_db/`, `03_dagster/`, etc.) and avoid adding loose files. Update the `README.md` with each significant change or commit so it always reflects the current state of the project. Maintaining an up-to-date README ensures that others (and automation tools) understand the repository’s latest structure and usage instructions.
@@ -45,10 +49,25 @@
     
 - **Open-Source License:** After forking or initializing this repository, **add a LICENSE file** to define how others can use and contribute to the project. We recommend choosing a permissive license like **MIT** or **Apache 2.0**. The **MIT License** is short and very permissive – it allows others to use, modify, and even redistribute your code in closed-source projects, as long as they include attribution. The **Apache License 2.0** is also highly permissive and additionally provides explicit protections for contributors and users regarding patents. In practice, both licenses let your project be used freely while safeguarding you and your contributors. To add a license, create a `LICENSE` file in the root with the full text of the chosen license (you can find templates on choosealicense.com or GitHub’s new repository setup). Picking a license is crucial for open collaboration – _do this as one of the first steps after cloning/forking_.
 
+### Do it right the first time
+it's important to step back, calm down, take a breath and make sure the plan and the approach is doing it the right way the first time. Not taking shortcuts, not creating tech debt, and analyzing and resolving issues and problems in architecture decisions correctly the first time. 
+
+Unless the user specifically calls out and confirms that there is a need to get something done immediately and right away, taking the extra cycle or two to check work and make sure it is the appropriate approach for go-forward success in well-created technology is the preference.
+
+### 00_clinerules/ and .clinerules rules of engagement
+00_cline-rules directory is used as the drafting or staging area for ongoing updated client rules. As new rules come up or are thought of that should be factored in, they go first into the 00_cline-rules directory for review by the user. 
+
+Similar to other/workplan.md, the top of each 00_clinerules/ .md file should contain a "future considerations" holding area where topics we might want to turn into rules are parked. As we iterate, if we get to a natural checkpoint where we need to turn it into a rule we can do that. But, frequently throughout the development process bullet points should be added to this section for tracking. 
+
+These Markdown files should only be edited and never deleted.
+
+The .clientrules hidden directory, which is the key source for the AI agent client agent referencing programming rules, is only to be edited or modified or updated by the user, not by the agent. 
+
 ### Development status
 Always maintain workplan.md with two overview areas:
 + Major milestones which are still open to complete
 + Major milesones which have been completed
+
 ### Commenting in code
 Always maintain robust comments in code to facilitate efficient review of code. Robust, but not superfluous or overly verbose.
 
@@ -61,6 +80,16 @@ When in planning mode, make sure to periodically, quite frequently, update the R
 + All of the information required for a user of the repo / forker of the repot to activate services, access services, add their own data, develop their data with the various tools (dagster, dbt, duck db, superset, cube, pandas ai) and how to observe that the forked configuration is operational
 + Instructions for the "right" way to fork and make use of the platform (perhaps updating their git ignore, license, .env file, .clinerules to exclude phase 1 context, update README.mp to exclude phase 1 context, etc.)
 
+## **Golden Software Versions**
+When troubleshooting, DO NOT trouble shoot by swapping out older versions of software. That is a bad idea and causes a lot of rework. Troubleshoot how to solve the problem given constraints on the software considered locked or pinned or golden. 
+
+Refer to .clinerules/golden_versions.md for official software versions. A draft version is at other/golden_versions.md which can be modified when a version change is approved and made, but move of the golden_versions.md file to .clinerules/ must be done by the user and that location is the master.
+### **Golden version Upgrade Protocol**
+
+1. **Research Phase**: Evaluate new versions in isolated testing environment
+2. **Impact Assessment**: Document breaking changes and migration requirements  
+3. **Staged Rollout**: Update development → staging → production
+4. **Version Documentation**: Update golden versions only after successful validation
 
 ## Phase 1: Platform Infrastructure Setup
 
