@@ -1,5 +1,9 @@
 # Core Technologies, Tools, and Sources
 
+## Future considerations
+- [ ]  [ OPEN ]
+
+----
 This document outlines the key development technologies and open-source tools chosen for the **proto_loc** project. We focus on an end-to-end data analytics and AI workflow, mimicking modern cloud analytics platforms. For each component, we highlight its purpose, why it was selected, and where to find authoritative information (official documentation, GitHub, and community resources). We also cover version considerations and how sensitive configuration (like API keys) is managed.
 
 proto_Loc uses only the open-source versions of these technologies and does not leverage any of the premium features or cloud-based enhancements which are paid for by some of these software development companies. When researching features or configurations, focus only on the core or open-source software features and not premium paywalled features.

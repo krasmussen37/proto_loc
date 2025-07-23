@@ -9,6 +9,13 @@
 .env.*
 !.env.example
 
+# ================================
+# PROJECT RULES - AI AGENT WORKING COPY
+# ================================
+# Exclude hidden .clinerules directory (AI agent working copy)
+# The 00_clinerules/ directory serves as the authoritative versioned source
+.clinerules/
+
 # API Keys and credentials
 **/config/secrets.yml
 **/config/credentials.yml

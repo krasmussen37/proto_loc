@@ -1,5 +1,9 @@
 # Data Integration Standards (proto_loc Analytics Platform)
 
+## Future considerations
+- [ ]  [ OPEN ]
+
+----
 This document defines the standards and best practices for data ingestion and integration within the proto_loc analytics platform. All data integration processes should follow these guidelines to ensure consistency, reliability, and maintainability.
 
 ## Core Principles
