@@ -1,3 +1,4 @@
+
 # Minimal Superset 4.0.2 with DuckDB support and admin user initialization
 FROM apache/superset:4.0.2
 
@@ -38,5 +39,7 @@ exec gunicorn --bind 0.0.0.0:8088 --access-logfile - --error-logfile - --workers
 # Expose port
 EXPOSE 8088
 
-# Use our initialization script as the entry point
-CMD ["/app/init-superset.sh"]
+
+# Use entrypoint script
+CMD ["/app/entrypoint.sh"]
+

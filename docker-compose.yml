@@ -1,10 +1,7 @@
-# Docker Compose configuration for the proto_loc analytics platform
-# This file defines the services, networks, and volumes that make up the platform.
-version: '3.8'
 
 services:
-  # Dagster: Data Orchestrator
-  # Handles the scheduling and execution of data pipelines.
+  # Data Orchestration Service - Manages ETL/ELT pipelines and asset materialization
+
   dagster:
     build:
       context: ./03_dagster
@@ -13,18 +10,18 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "${DAGSTER_PORT:-3000}:3000"
+      - "${DAGSTER_PORT:-3000}:3000"  # Expose Dagster UI on configurable port (default: 3000)
     volumes:
-      # Mounts the local Dagster code into the container for development
-      - ./03_dagster:/app/03_dagster
-      # Mounts the DuckDB databases for access by Dagster
+      # Mount project code for live development
+      - ./03_dagster:/app
+      # Mount DuckDB databases for read/write access
       - ./02_duck_db:/app/02_duck_db
-      # Mounts the source data for ingestion
+      # Mount source data directory for ingestion
       - ./01_source_data:/app/01_source_data
-      # Persists Dagster's run history and metadata
-      - dagster_data:/opt/dagster/dagster_home
+      # Mount Dagster home for persistent run history, schedules, and metadata
+      - ./03_dagster/dagster_home:/opt/dagster/dagster_home
     environment:
-      - DAGSTER_HOME=/opt/dagster/dagster_home
+      # Database path configuration - allows environment-specific overrides
       - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
       - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
       - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
@@ -32,24 +29,25 @@ services:
       - proto_loc_network
     restart: unless-stopped
 
-  # dbt: Data Transformation Tool
-  # Enables data transformation using SQL-based models.
+  # Data Transformation Service - SQL-based data modeling with dbt
   dbt:
     build:
       context: ./04_dbt
       dockerfile: Dockerfile
     volumes:
-      # Mounts the local dbt code into the container for development
+      # Mount dbt project for live development
       - ./04_dbt:/app/04_dbt
-      # Mounts the DuckDB databases for access by dbt
+      # Mount DuckDB databases for transformation operations
       - ./02_duck_db:/app/02_duck_db
     environment:
+      # Database path configuration for dbt profiles
       - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
       - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
       - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
     networks:
       - proto_loc_network
     restart: unless-stopped
+
 
   # PostgreSQL: Database for Superset Metadata
   # Provides a reliable OLTP database for Superset's application data
@@ -73,6 +71,7 @@ services:
 
   # Superset: Data Visualization and BI Platform
   # Used for creating interactive dashboards and charts
+  
   superset:
     build:
       context: ./06_superset
@@ -81,8 +80,9 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "${SUPERSET_PORT:-8088}:8088"
+      - "${SUPERSET_PORT:-8088}:8088"  # Expose Superset UI on configurable port (default: 8088)
     volumes:
+
       # Mounts the DuckDB databases for data access (read-only for safety)
       - ./02_duck_db:/app/02_duck_db:ro
     environment:
@@ -111,49 +111,47 @@ services:
       retries: 3
       start_period: 120s
 
-  # Cube: Semantic Layer
-  # Provides a consistent data model for analytics.
-  # TEMPORARILY DISABLED: Cube service has npm dependency conflicts
-  # TODO: Debug and resolve @cubejs-backend package version issues
-  # cube:
-  #   build:
-  #     context: ./05_cube_dev
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "${CUBE_PORT:-4000}:4000"
-  #   volumes:
-  #     # Mounts the local Cube configuration for development
-  #     - ./05_cube_dev:/app/05_cube_dev
-  #     # Mounts the DuckDB databases in read-only mode
-  #     - ./02_duck_db:/app/02_duck_db:ro
-  #   environment:
-  #     - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
-  #     - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
-  #   networks:
-  #     - proto_loc_network
-  #   restart: unless-stopped
 
-  # Jupyter: Interactive Computing Environment
-  # Used for data exploration and AI-powered analysis with PandasAI.
+  # Semantic Layer Service - Metrics and API layer
+  cube:
+    build:
+      context: ./05_cube_dev
+      dockerfile: Dockerfile
+    ports:
+      - "${CUBE_PORT:-4000}:4000"  # Expose Cube API on configurable port (default: 4000)
+    volumes:
+      # Mount Cube schema definitions for live development
+      - ./05_cube_dev:/app/05_cube_dev
+      # Mount DuckDB databases in read-only mode (Cube only reads from prod)
+      - ./02_duck_db:/app/02_duck_db:ro
+    environment:
+      - CUBEJS_DB_TYPE=duckdb
+      # Cube connects only to production database for stable API
+      - CUBEJS_DB_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
+    networks:
+      - proto_loc_network
+    restart: unless-stopped
+
+  # AI Analysis Service - Jupyter notebooks with PandasAI integration
   jupyter:
     build:
       context: ./07_pandas_ai
       dockerfile: Dockerfile
     ports:
-      - "${JUPYTER_PORT:-8888}:8888"
+      - "${JUPYTER_PORT:-8888}:8888"  # Expose JupyterLab on configurable port (default: 8888)
     volumes:
-      # Mounts the local Jupyter notebooks and scripts for development
+
+      # Mount notebooks directory for persistent development
       - ./07_pandas_ai:/app/07_pandas_ai
-      # Mounts the DuckDB databases for access from notebooks
+      # Mount DuckDB databases for analysis (can read/write for experimentation)
       - ./02_duck_db:/app/02_duck_db
-      # Mounts the source data for analysis
+      # Mount source data for direct analysis
       - ./01_source_data:/app/01_source_data
     environment:
       - JUPYTER_PORT=${JUPYTER_PORT:-8888}
+      # API key for PandasAI LLM integration
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - GROQ_API_KEY=${GROQ_API_KEY}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      # Database path configuration for notebook connections
       - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
       - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
       - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}

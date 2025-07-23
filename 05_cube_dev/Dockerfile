@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:18
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ COPY package*.json ./
 RUN npm install
 
 # Copy source code
-COPY . /app/05_cube_dev/
+COPY . .
 
 # Expose port
 EXPOSE 4000
