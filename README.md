@@ -102,6 +102,15 @@ proto_loc/
 
 ## ⚙️ Configuration
 
+
+| Service | URL | Default Login | Purpose |
+|---------|-----|---------------|---------|
+| **Superset** | http://localhost:8088 | admin / admin | BI & Dashboards |
+| **Dagster** | http://localhost:3000 | No login required | Data Orchestration |
+| **Jupyter** | http://localhost:8888 | Token-based (see logs) | AI-Powered Analysis |
+| **PostgreSQL** | Internal (port 5432) | superset / superset | Application Metadata Store |
+| **Cube** | http://localhost:4000 | Currently disabled | Semantic Layer |
+
 ### Environment Variables (.env)
 Copy `.env.example` to `.env` and configure:
 

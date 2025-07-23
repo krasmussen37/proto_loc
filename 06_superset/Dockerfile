@@ -1,41 +1,40 @@
 
-FROM python:3.11-slim
+# Minimal Superset 4.0.2 with DuckDB support and admin user initialization
+FROM apache/superset:4.0.2
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Switch to root to install DuckDB driver and setup initialization
+USER root
 
-# Create superset user with home directory
-RUN groupadd -r superset && useradd -r -g superset -d /home/superset -m superset
+# Install DuckDB driver, PostgreSQL driver, and advanced analytics libraries
+RUN pip install duckdb==1.1.3 duckdb_engine psycopg2-binary statsmodels scikit-learn
 
-# Install Python packages with compatible versions
-RUN pip install --upgrade pip && \
-    pip install "marshmallow<3.19.0" && \
-    pip install apache-superset==4.1.1 && \
-    pip install duckdb==1.3.2 && \
-    pip install duckdb-engine
+# Create initialization script for admin user setup
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "Initializing Superset..."\n\
+\n\
+# Initialize the database\n\
+superset db upgrade\n\
+\n\
+# Create admin user if it does not exist\n\
+superset fab create-admin \\\n\
+    --username admin \\\n\
+    --firstname Admin \\\n\
+    --lastname User \\\n\
+    --email admin@example.com \\\n\
+    --password admin || echo "Admin user already exists or creation failed - continuing..."\n\
+\n\
+# Initialize roles and permissions\n\
+superset init\n\
+\n\
+echo "Superset initialization complete. Starting server..."\n\
+\n\
+# Start Superset server\n\
+exec gunicorn --bind 0.0.0.0:8088 --access-logfile - --error-logfile - --workers 1 --worker-class gthread --threads 20 --timeout 60 --keep-alive 2 --max-requests 1000 --max-requests-jitter 100 --preload "superset.app:create_app()"\n\
+' > /app/init-superset.sh && chmod +x /app/init-superset.sh
 
-# Create app directory
-RUN mkdir -p /app && chown superset:superset /app
-WORKDIR /app
-
-# Copy custom configuration and entrypoint script
-COPY superset_config.py /app/superset_config.py
-COPY entrypoint.sh /app/entrypoint.sh
-
-# Make entrypoint script executable
-RUN chmod +x /app/entrypoint.sh && chown superset:superset /app/entrypoint.sh
-
-# Switch to superset user
-USER superset
-
-# Set environment variables
-ENV SUPERSET_CONFIG_PATH=/app/superset_config.py
-ENV FLASK_APP=superset
-
+# Keep running as root for file permissions in development
+# USER superset  # Commented out to allow access to mounted DuckDB files
 
 # Expose port
 EXPOSE 8088

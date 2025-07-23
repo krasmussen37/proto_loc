@@ -6,7 +6,9 @@ services:
     build:
       context: ./03_dagster
       dockerfile: Dockerfile
-    command: dagster dev -h 0.0.0.0 -f /app/definitions.py  # Run Dagster webserver + daemon
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "${DAGSTER_PORT:-3000}:3000"  # Expose Dagster UI on configurable port (default: 3000)
     volumes:
@@ -46,24 +48,56 @@ services:
       - proto_loc_network
     restart: unless-stopped
 
-  # Business Intelligence Service - Dashboards and visualization
+
+  # PostgreSQL: Database for Superset Metadata
+  # Provides a reliable OLTP database for Superset's application data
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=${SUPERSET_POSTGRES_DB:-superset}
+      - POSTGRES_USER=${SUPERSET_POSTGRES_USER:-superset}
+      - POSTGRES_PASSWORD=${SUPERSET_POSTGRES_PASSWORD:-superset}
+    volumes:
+      # Persists PostgreSQL database data
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - proto_loc_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SUPERSET_POSTGRES_USER:-superset}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Superset: Data Visualization and BI Platform
+  # Used for creating interactive dashboards and charts
+  
   superset:
     build:
       context: ./06_superset
       dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "${SUPERSET_PORT:-8088}:8088"  # Expose Superset UI on configurable port (default: 8088)
     volumes:
 
-      # Mount Superset configuration
-      - ./06_superset:/app/superset
-      # Mount DuckDB databases in read-only mode for safety
+      # Mounts the DuckDB databases for data access (read-only for safety)
       - ./02_duck_db:/app/02_duck_db:ro
-      # Mount persistent data directory for dashboards, connections, and user data
-      - ./06_superset/data:/home/superset/.superset
     environment:
-      - SUPERSET_PORT=${SUPERSET_PORT:-8088}
-      # Database path configuration for Superset connections
+      # PostgreSQL connection for Superset metadata
+      - SUPERSET_POSTGRES_HOST=postgres
+      - SUPERSET_POSTGRES_PORT=5432
+      - SUPERSET_POSTGRES_DB=${SUPERSET_POSTGRES_DB:-superset}
+      - SUPERSET_POSTGRES_USER=${SUPERSET_POSTGRES_USER:-superset}
+      - SUPERSET_POSTGRES_PASSWORD=${SUPERSET_POSTGRES_PASSWORD:-superset}
+      # Superset application configuration
+      - SUPERSET_SECRET_KEY=${SUPERSET_SECRET_KEY:-your-secret-key-here-change-me-in-production}
+      - SUPERSET_USERNAME=${SUPERSET_USERNAME:-admin}
+      - SUPERSET_PASSWORD=${SUPERSET_PASSWORD:-admin}
+      - SUPERSET_EMAIL=${SUPERSET_EMAIL:-admin@example.com}
+      # DuckDB database paths for analytics data connections
       - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
       - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
       - DUCKDB_PROD_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
@@ -75,7 +109,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 90s
+      start_period: 120s
 
 
   # Semantic Layer Service - Metrics and API layer
@@ -132,6 +166,9 @@ volumes:
     driver: local
   # Persists Superset's metadata, dashboards, and charts
   superset_data:
+    driver: local
+  # Persists PostgreSQL database data for Superset metadata
+  postgres_data:
     driver: local
 
 # Shared network for all services
