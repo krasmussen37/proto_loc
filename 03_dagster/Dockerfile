@@ -23,8 +23,11 @@ RUN mkdir -p /opt/dagster/dagster_home
 # Set the DAGSTER_HOME environment variable
 ENV DAGSTER_HOME=/opt/dagster/dagster_home
 
+# Copy Dagster configuration file
+COPY dagster.yaml /opt/dagster/dagster_home/
+
 # Expose the port for the Dagster UI
 EXPOSE 3000
 
-# Start the Dagster development server
+# Start the Dagster development server with PostgreSQL configuration
 CMD ["sh", "-c", "cd /app/03_dagster && dagster dev -h 0.0.0.0 -p 3000"]

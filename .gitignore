@@ -1,56 +1,240 @@
-# Environment variables
+# proto_loc Analytics Platform - Git Ignore Configuration
+# Prevents sensitive data, large files, and build artifacts from being committed
+
+# ================================
+# SECURITY - NEVER COMMIT SECRETS
+# ================================
 .env
-.env.local
-.env.*.local
+*.env
+.env.*
+!.env.example
 
-# DuckDB databases
-*.duckdb
-*.wal
-*.tmp
+# API Keys and credentials
+**/config/secrets.yml
+**/config/credentials.yml
 
-# Source data
+# ================================
+# DATA FILES - TOO LARGE FOR GIT
+# ================================
+# Raw source data files
 01_source_data/
 !01_source_data/.gitkeep
 
-# Python
+# DuckDB database files
+02_duck_db/
+!02_duck_db/01_raw/.gitkeep
+!02_duck_db/02_dev/.gitkeep
+!02_duck_db/03_prod/.gitkeep
+*.duckdb
+*.duckdb.wal
+*.duckdb.tmp
+
+# ================================
+# SERVICE-SPECIFIC ARTIFACTS
+# ================================
+# Dagster runtime data and logs
+03_dagster/dagster_home/
+!03_dagster/dagster_home/.gitkeep
+03_dagster/01_source_data/
+03_dagster/02_duck_db/
+
+# dbt build artifacts and logs
+04_dbt/logs/
+04_dbt/target/
+04_dbt/dbt_packages/
+04_dbt/profiles.yml.bak
+
+# Superset application data
+06_superset/data/
+!06_superset/data/.gitkeep
+06_superset/superset.db*
+06_superset/*.db
+
+# Jupyter notebook checkpoints
+07_pandas_ai/.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Cube.js artifacts
+05_cube_dev/node_modules/
+05_cube_dev/.env*
+05_cube_dev/dist/
+
+# ================================
+# PYTHON ARTIFACTS
+# ================================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual environments
 venv/
 ENV/
-env.bak/
-venv.bak/
+env/
+.env/
+.venv/
 
-# IDE
+# ================================
+# DOCKER & INFRASTRUCTURE
+# ================================
+# Docker volumes and data
+postgres_data/
+dagster_data/
+superset_data/
+
+# Docker build cache
+.docker/
+
+# ================================
+# IDE AND OS FILES
+# ================================
+# VSCode
 .vscode/
+*.code-workspace
+
+# PyCharm
 .idea/
+*.iws
+*.iml
+*.ipr
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
 *.swp
 *.swo
 *~
 
-# OS
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Windows
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
 
-# Logs
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ================================
+# LOGS AND TEMPORARY FILES
+# ================================
 *.log
+*.log.*
 logs/
+log/
+tmp/
+temp/
+.tmp/
 
-# Docker
-.dockerignore
-
-# Jupyter
-.ipynb_checkpoints/
-*.ipynb_checkpoints/
-*.ipynb # Ignore all Jupyter notebooks by default
-
-# dbt
-target/
-dbt_packages/
-logs/
-
-# Node.js dependencies
+# ================================
+# NODE.JS (for Cube.js)
+# ================================
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+package-lock.json.bak
+
+# ================================
+# BACKUP FILES
+# ================================
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*~
+
+# ================================
+# OTHER DEVELOPMENT ARTIFACTS
+# ================================
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pipenv
+Pipfile.lock
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# Keep important empty directories
+!**/.gitkeep

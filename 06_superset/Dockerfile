@@ -4,8 +4,8 @@ FROM apache/superset:4.0.2
 # Switch to root to install DuckDB driver and setup initialization
 USER root
 
-# Install DuckDB driver and SQLAlchemy connector for connecting to DuckDB databases
-RUN pip install duckdb==1.1.3 duckdb_engine
+# Install DuckDB driver, PostgreSQL driver, and advanced analytics libraries
+RUN pip install duckdb==1.1.3 duckdb_engine psycopg2-binary statsmodels scikit-learn
 
 # Create initialization script for admin user setup
 RUN echo '#!/bin/bash\n\

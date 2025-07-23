@@ -22,6 +22,8 @@
 
 ### **2. Platform Hardening & Modernization**
 - [ ] **Technology Stack Version Review**: Conduct comprehensive analysis of current tool versions (Python, DuckDB, Dagster, dbt, Superset, PandasAI) vs. latest stable releases, with upgrade recommendations and risk assessment
+- [ ] **Superset 5.0.0 Upgrade & Redis Integration**: Upgrade from Superset 4.0.2 to 5.0.0 and integrate Redis for performance caching to replace in-memory cache with production-grade solution
+- [ ] **Infrastructure as Code**: Automate Superset database connection setup via API to eliminate manual UI configuration steps
 - [ ] **Version Upgrade Implementation**: Execute approved version upgrades based on research findings
 - [ ] **Performance Benchmarking**: Establish baseline performance metrics for the updated stack
 
