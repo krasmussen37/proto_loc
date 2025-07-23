@@ -164,9 +164,6 @@ volumes:
   # Persists Dagster's run history, logs, and metadata
   dagster_data:
     driver: local
-  # Persists Superset's metadata, dashboards, and charts
-  superset_data:
-    driver: local
   # Persists PostgreSQL database data for Superset metadata
   postgres_data:
     driver: local

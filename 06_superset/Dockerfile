@@ -6,7 +6,7 @@ FROM apache/superset:4.0.2
 USER root
 
 # Install DuckDB driver, PostgreSQL driver, and advanced analytics libraries
-RUN pip install duckdb==1.1.3 duckdb_engine psycopg2-binary statsmodels scikit-learn
+RUN pip install duckdb==1.3.2 duckdb_engine psycopg2-binary statsmodels scikit-learn
 
 # Create initialization script for admin user setup
 RUN echo '#!/bin/bash\n\
@@ -40,6 +40,5 @@ exec gunicorn --bind 0.0.0.0:8088 --access-logfile - --error-logfile - --workers
 EXPOSE 8088
 
 
-# Use entrypoint script
-CMD ["/app/entrypoint.sh"]
-
+# Use our initialization script as the entry point
+CMD ["/app/init-superset.sh"]

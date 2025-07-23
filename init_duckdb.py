@@ -25,7 +25,7 @@ def create_database(db_path: Path):
     # Install essential extensions
     conn.execute("INSTALL spatial")
     conn.execute("LOAD spatial")
-    print(f"  - Loaded spatial extension for geospatial analysis")
+    print("  - Loaded spatial extension for geospatial analysis")
     
     # Create basic schemas
     if "raw" in str(db_path):

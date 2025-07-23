@@ -1,8 +1,32 @@
 # Dagster configuration for proto_loc analytics platform
 # Configures PostgreSQL for run storage, event log storage, and schedule storage
 
-storage:
-  postgres:
+run_storage:
+  module: dagster_postgres.run_storage
+  class: PostgresRunStorage
+  config:
+    postgres_db:
+      hostname: postgres
+      username: superset
+      password: superset
+      db_name: superset
+      port: 5432
+
+event_log_storage:
+  module: dagster_postgres.event_log_storage
+  class: PostgresEventLogStorage
+  config:
+    postgres_db:
+      hostname: postgres
+      username: superset
+      password: superset
+      db_name: superset
+      port: 5432
+
+schedule_storage:
+  module: dagster_postgres.schedule_storage
+  class: PostgresScheduleStorage
+  config:
     postgres_db:
       hostname: postgres
       username: superset

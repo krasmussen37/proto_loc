@@ -34,6 +34,12 @@
 - [ ] **Re-enable Cube Service**: Uncomment the `cube` service in `docker-compose.yml` and confirm successful build and startup
 - [ ] **Test Cube Integration**: Create a simple cube definition connecting to mart tables
 
+### **4. MCP Server Integration Planning**
+- [ ] **Research CodeRabbit API Integration**: Investigate CodeRabbit's available APIs for programmatic access to code review comments and feedback
+- [ ] **Design CodeRabbit MCP Server**: Architect an MCP server to fetch and provide CodeRabbit review data through standardized tool interfaces
+- [ ] **Evaluate SourceGraph MCP Enhancement**: Research opportunities to expand the existing SourceGraph MCP server with additional functionality for richer code context
+- [ ] **Prototype MCP Development Environment**: Create a unified development workflow that integrates both CodeRabbit and SourceGraph data sources through MCP tools
+
 ## Key Milestones Completed ✅
 
 ### **Platform Infrastructure & Stability**
