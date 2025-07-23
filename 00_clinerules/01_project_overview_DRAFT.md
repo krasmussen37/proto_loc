@@ -10,7 +10,7 @@ This project is structured into **two phases** to 1-build and 2-utilize a compre
 
 - **Data Refresh Flexibility:** Enable periodic manual refresh of source data during prototyping. (Full automation of data pipelines will be handled later in a production cloud environment.)
 
-- **Showcase & Community Value:** Provide a fork able platform as a live example of our analytics-to-AI capabilities, useful for community demonstrations and marketing.
+- **Showcase & Community Value:** Provide a fork-able platform as a live example of our analytics-to-AI capabilities, useful for community demonstrations and marketing.
 
 - **Training & Skill Development:** Use this integrated stack as a training ground for team onboarding, continuous learning, and skill validation (even as part of talent evaluation), covering all key aspects of data analytics projects.
 

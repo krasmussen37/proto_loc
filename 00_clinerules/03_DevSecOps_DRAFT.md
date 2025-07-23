@@ -55,13 +55,13 @@ it's important to step back, calm down, take a breath and make sure the plan and
 Unless the user specifically calls out and confirms that there is a need to get something done immediately and right away, taking the extra cycle or two to check work and make sure it is the appropriate approach for go-forward success in well-created technology is the preference.
 
 ### 00_clinerules/ and .clinerules rules of engagement
-00_cline-rules directory is used as the drafting or staging area for ongoing updated client rules. As new rules come up or are thought of that should be factored in, they go first into the 00_cline-rules directory for review by the user. 
+00_clinerules directory is used as the drafting or staging area for ongoing updated client rules. As new rules come up or are thought of that should be factored in, they go first into the 00_clinerules directory for review by the user. 
 
 Similar to other/workplan.md, the top of each 00_clinerules/ .md file should contain a "future considerations" holding area where topics we might want to turn into rules are parked. As we iterate, if we get to a natural checkpoint where we need to turn it into a rule we can do that. But, frequently throughout the development process bullet points should be added to this section for tracking. 
 
 These Markdown files should only be edited and never deleted.
 
-The .clientrules hidden directory, which is the key source for the AI agent client agent referencing programming rules, is only to be edited or modified or updated by the user, not by the agent. 
+The .clinerules hidden directory, which is the key source for the AI agent cline agent referencing programming rules, is only to be edited or modified or updated by the user, not by the agent. 
 
 ### Development status
 Always maintain workplan.md with two overview areas:
