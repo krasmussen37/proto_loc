@@ -129,7 +129,7 @@ superset_data/
 # ================================
 # IDE AND OS FILES
 # ================================
-# VSCode
+# VSCode - Let users choose their own development tooling
 .vscode/
 *.code-workspace
 
@@ -245,3 +245,15 @@ celerybeat-schedule
 
 # Keep important empty directories
 !**/.gitkeep
+# Additional infrastructure patterns for public release
+# Temporary files from our development
+*.md.bak
+*config_verification_checklist.md*
+
+# WSL2 development artifacts  
+.tmp/
+temp-*
+
+# AI development artifacts
+claude.md.backup
+

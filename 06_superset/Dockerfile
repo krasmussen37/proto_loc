@@ -1,12 +1,30 @@
 
 # Minimal Superset 4.0.2 with DuckDB support and admin user initialization
-FROM apache/superset:4.0.2
+FROM apache/superset:5.0.0
 
 # Switch to root to install DuckDB driver and setup initialization
 USER root
 
-# Install DuckDB driver, PostgreSQL driver, and advanced analytics libraries
-RUN pip install duckdb==1.1.3 duckdb_engine psycopg2-binary statsmodels scikit-learn
+# Install dependencies with explicit PYTHONPATH to include system site-packages
+ENV PYTHONPATH="/usr/local/lib/python3.10/site-packages:/app/.venv/lib/python3.10/site-packages:$PYTHONPATH"
+
+# Install PostgreSQL driver using system pip (since that works)
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir psycopg2-binary==2.9.9
+
+# Install Python dependencies from requirements.txt
+COPY requirements.txt .  
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install advanced analytics libraries (DuckDB engine version controlled by requirements.txt)
+RUN pip install --no-cache-dir statsmodels scikit-learn
+
+# Copy Superset configuration file
+COPY superset_config.py /app/pythonpath/superset_config.py
+
+# Set Superset configuration
+ENV SUPERSET_CONFIG_PATH=/app/pythonpath/superset_config.py
+ENV PYTHONPATH=/app/pythonpath:$PYTHONPATH
 
 # Create initialization script for admin user setup
 RUN echo '#!/bin/bash\n\
@@ -40,6 +58,5 @@ exec gunicorn --bind 0.0.0.0:8088 --access-logfile - --error-logfile - --workers
 EXPOSE 8088
 
 
-# Use entrypoint script
-CMD ["/app/entrypoint.sh"]
-
+# Use the initialization script we created
+CMD ["/app/init-superset.sh"]

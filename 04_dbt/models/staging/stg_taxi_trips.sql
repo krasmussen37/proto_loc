@@ -1,38 +1,72 @@
--- Staging model for NYC taxi trips
--- This is a placeholder that will be populated with actual taxi data
+{{
+  config(
+    materialized='view'
+  )
+}}
 
-{{ config(
-    materialized='view',
-    schema='stg'
-) }}
+WITH source AS (
+  SELECT * FROM {{ source('nyc_taxi_data', 'raw_taxi_trips') }}
+),
 
-SELECT 
-    -- Trip identifiers
-    'placeholder' as trip_id,
-    'placeholder' as vendor_id,
+transformed AS (
+  SELECT
+    -- Cast ID columns to strings for proper categorical handling
+    CAST(VendorID AS VARCHAR) AS VendorID,
+    CAST(RatecodeID AS VARCHAR) AS RatecodeID,
+    CAST(PULocationID AS VARCHAR) AS PULocationID,
+    CAST(DOLocationID AS VARCHAR) AS DOLocationID,
+    CAST(payment_type AS VARCHAR) AS payment_type,
     
-    -- Timestamps
-    CURRENT_TIMESTAMP as pickup_datetime,
-    CURRENT_TIMESTAMP as dropoff_datetime,
+    -- Convert timestamps to proper TIMESTAMP type (assuming NYC local time)
+    CAST(tpep_pickup_datetime AS TIMESTAMP) AS tpep_pickup_datetime,
+    CAST(tpep_dropoff_datetime AS TIMESTAMP) AS tpep_dropoff_datetime,
     
-    -- Location data
-    0.0 as pickup_longitude,
-    0.0 as pickup_latitude,
-    0.0 as dropoff_longitude,
-    0.0 as dropoff_latitude,
+    -- Keep numeric fields as-is
+    passenger_count,
+    trip_distance,
+    fare_amount,
+    extra,
+    mta_tax,
+    tip_amount,
+    tolls_amount,
+    improvement_surcharge,
+    total_amount,
+    congestion_surcharge,
+    airport_fee,
     
-    -- Trip metrics
-    1 as passenger_count,
-    0.0 as trip_distance,
-    0.0 as fare_amount,
-    0.0 as tip_amount,
-    0.0 as total_amount,
+    -- Store and forward flag
+    store_and_fwd_flag,
     
-    -- Additional fields
-    'placeholder' as payment_type,
-    0.0 as pickup_longitude_raw,
-    0.0 as pickup_latitude_raw,
-    0.0 as dropoff_longitude_raw,
-    0.0 as dropoff_latitude_raw
+    -- Calculate total amount for validation based on data dictionary
+    -- Components: fare_amount + extra + mta_tax + improvement_surcharge + tolls_amount + congestion_surcharge + airport_fee
+    -- Note: tip_amount is NOT included per data dictionary, cbd_congestion_fee not present in our dataset
+    (
+      COALESCE(fare_amount, 0) +
+      COALESCE(extra, 0) +
+      COALESCE(mta_tax, 0) +
+      COALESCE(improvement_surcharge, 0) +
+      COALESCE(tolls_amount, 0) +
+      COALESCE(congestion_surcharge, 0) +
+      COALESCE(airport_fee, 0)
+    )::DECIMAL(10,2) AS calculated_total_amount,
     
-WHERE 1=0  -- Empty table for now
+    -- Calculate trip duration in minutes
+    DATEDIFF('minute', 
+      CAST(tpep_pickup_datetime AS TIMESTAMP), 
+      CAST(tpep_dropoff_datetime AS TIMESTAMP)
+    ) AS trip_duration_minutes,
+    
+    -- Extract date parts for easier analysis
+    DATE(CAST(tpep_pickup_datetime AS TIMESTAMP)) AS pickup_date,
+    EXTRACT(YEAR FROM CAST(tpep_pickup_datetime AS TIMESTAMP)) AS pickup_year,
+    EXTRACT(MONTH FROM CAST(tpep_pickup_datetime AS TIMESTAMP)) AS pickup_month,
+    EXTRACT(DOW FROM CAST(tpep_pickup_datetime AS TIMESTAMP)) AS pickup_day_of_week,
+    EXTRACT(HOUR FROM CAST(tpep_pickup_datetime AS TIMESTAMP)) AS pickup_hour,
+    
+    -- Keep ingestion metadata
+    _ingested_at
+    
+  FROM source
+)
+
+SELECT * FROM transformed

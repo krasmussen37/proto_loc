@@ -1,0 +1,159 @@
+version: 2
+
+models:
+  - name: stg_taxi_trips
+    description: "Cleaned and standardized NYC taxi trip data"
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "count(*) > 0"
+          config:
+            severity: error
+    columns:
+      - name: VendorID
+        description: "Vendor ID as string"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_vendor')
+              field: vendor_id
+              severity: warn  # Use warn to see what codes are missing
+      - name: RatecodeID
+        description: "Rate code ID as string"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_rate_code')
+              field: rate_code_id
+              severity: warn
+      - name: payment_type
+        description: "Payment type as string"
+        tests:
+          - relationships:
+              to: ref('dim_payment_type')
+              field: payment_type
+              severity: warn
+      - name: PULocationID
+        description: "Pickup location ID"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_taxi_zones')
+              field: LocationID
+      - name: DOLocationID
+        description: "Dropoff location ID"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_taxi_zones')
+              field: LocationID
+      - name: tpep_pickup_datetime
+        description: "Pickup timestamp"
+        tests:
+          - not_null
+      - name: tpep_dropoff_datetime
+        description: "Dropoff timestamp"
+        tests:
+          - not_null
+      - name: trip_distance
+        description: "Trip distance in miles"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 200  # Reasonable upper bound for NYC trips
+      - name: fare_amount
+        description: "Fare amount"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1000  # Reasonable upper bound
+
+  - name: fct_taxi_trips
+    description: "Fact table for NYC taxi trips with dimensional context"
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "count(*) > 0"
+          config:
+            severity: error
+    columns:
+      - name: pickup_date
+        description: "Date of pickup"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "pickup_date between date '2023-01-01' and current_date"
+      - name: total_amount_mismatch_flag
+        description: "Flag indicating mismatch between actual and calculated total"
+        tests:
+          - accepted_values:
+              values: [0, 1]
+      - name: negative_duration_flag
+        description: "Flag for trips with negative duration"
+        tests:
+          - accepted_values:
+              values: [0, 1]
+
+  - name: dim_taxi_zones_geospatial
+    description: "Taxi zones with geospatial boundary data"
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "count(*) > 0"
+          config:
+            severity: error
+    columns:
+      - name: LocationID
+        description: "Location ID"
+        tests:
+          - unique
+          - not_null
+      - name: Zone
+        description: "Zone name"
+        tests:
+          - not_null
+      - name: Borough
+        description: "NYC Borough"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island', 'EWR', 'Unknown']
+
+seeds:
+  - name: dim_vendor
+    description: "Vendor dimension table"
+    columns:
+      - name: vendor_id
+        description: "Vendor ID"
+        tests:
+          - unique
+          - not_null
+      - name: vendor_name
+        description: "Vendor name"
+        tests:
+          - not_null
+
+  - name: dim_rate_code
+    description: "Rate code dimension table"
+    columns:
+      - name: rate_code_id
+        description: "Rate code ID"
+        tests:
+          - unique
+          - not_null
+      - name: rate_code_name
+        description: "Rate code name"
+        tests:
+          - not_null
+
+  - name: dim_payment_type
+    description: "Payment type dimension table"
+    columns:
+      - name: payment_type
+        description: "Payment type code"
+        tests:
+          - unique
+          - not_null
+      - name: payment_name
+        description: "Payment type name"
+        tests:
+          - not_null

@@ -1,0 +1,8 @@
+rate_code_id,rate_code_name,rate_code_description
+1,Standard rate,Standard taxi rate
+2,JFK,JFK Airport rate
+3,Newark,Newark Airport rate
+4,Nassau or Westchester,Nassau or Westchester rate
+5,Negotiated fare,Negotiated fare rate
+6,Group ride,Group ride rate
+99,Null/unknown,Null or unknown rate code
