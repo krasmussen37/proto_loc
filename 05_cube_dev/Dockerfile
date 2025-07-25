@@ -1,3 +1,4 @@
+# Standard Cube.js Dockerfile with golden versions (avoid Alpine for native extensions)
 FROM node:18
 
 WORKDIR /app
@@ -8,11 +9,11 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Copy source code
+# Copy source code and schema
 COPY . .
 
-# Expose port
+# Expose standard Cube.js port
 EXPOSE 4000
 
-# Start Cube
+# Use standard Cube.js dev server
 CMD ["npm", "run", "dev"]

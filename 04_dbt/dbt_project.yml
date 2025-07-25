@@ -18,6 +18,10 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+# Define project-level variables
+vars:
+  TAXI_ZONES_SHP_PATH: "/app/01_source_data/nyc_yellow_taxi_demo_data/taxi_zones/taxi_zones.shp"
+
 models:
   proto_loc_dbt:
     # Applies to all files under models/.../
@@ -26,3 +30,5 @@ models:
       +materialized: view
     marts:
       +materialized: table
+      dim_taxi_zones_geospatial:
+        +enabled: true

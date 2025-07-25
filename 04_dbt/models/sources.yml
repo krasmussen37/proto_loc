@@ -1,0 +1,64 @@
+version: 2
+
+sources:
+  - name: nyc_taxi_data
+    description: "Raw NYC taxi trip and zone data ingested by Dagster"
+    schema: nyc_taxi_data
+    tables:
+      - name: raw_taxi_trips
+        description: "Raw NYC Yellow Taxi trip records"
+        columns:
+          - name: VendorID
+            description: "TPEP provider that provided the record"
+          - name: tpep_pickup_datetime
+            description: "Date and time when the meter was engaged"
+          - name: tpep_dropoff_datetime
+            description: "Date and time when the meter was disengaged"
+          - name: passenger_count
+            description: "Number of passengers in the vehicle"
+          - name: trip_distance
+            description: "Elapsed trip distance in miles"
+          - name: RatecodeID
+            description: "Final rate code in effect at end of trip"
+          - name: store_and_fwd_flag
+            description: "Whether trip record was held in vehicle memory"
+          - name: PULocationID
+            description: "TLC Taxi Zone where taximeter was engaged"
+          - name: DOLocationID
+            description: "TLC Taxi Zone where taximeter was disengaged"
+          - name: payment_type
+            description: "Numeric code for how passenger paid"
+          - name: fare_amount
+            description: "Time-and-distance fare calculated by meter"
+          - name: extra
+            description: "Miscellaneous extras and surcharges"
+          - name: mta_tax
+            description: "Tax automatically triggered based on metered rate"
+          - name: tip_amount
+            description: "Tip amount (credit card tips only)"
+          - name: tolls_amount
+            description: "Total amount of all tolls paid"
+          - name: improvement_surcharge
+            description: "Improvement surcharge assessed at flag drop"
+          - name: total_amount
+            description: "Total amount charged to passengers"
+          - name: congestion_surcharge
+            description: "NYS congestion surcharge amount"
+          - name: airport_fee
+            description: "Pick up fee for LaGuardia and JFK airports"
+          - name: _ingested_at
+            description: "Timestamp when record was ingested by Dagster"
+
+      - name: raw_taxi_zones
+        description: "NYC TLC Taxi Zone lookup data"
+        columns:
+          - name: LocationID
+            description: "Unique identifier for taxi zone"
+          - name: Zone
+            description: "Zone name"
+          - name: Borough
+            description: "NYC borough"
+          - name: service_zone
+            description: "Service zone classification"
+          - name: _ingested_at
+            description: "Timestamp when record was ingested by Dagster"

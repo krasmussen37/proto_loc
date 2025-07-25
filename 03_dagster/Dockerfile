@@ -39,4 +39,4 @@ COPY dagster.yaml /opt/dagster/dagster_home/
 EXPOSE 3000
 
 # Start the Dagster development server with PostgreSQL configuration
-CMD ["sh", "-c", "cd /app/03_dagster && dagster dev -h 0.0.0.0 -p 3000"]
+CMD ["sh", "-c", "cd /app && dagster dev -h 0.0.0.0 -p 3000"]

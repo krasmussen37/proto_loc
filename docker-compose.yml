@@ -18,6 +18,8 @@ services:
       - ./02_duck_db:/app/02_duck_db
       # Mount source data directory for ingestion
       - ./01_source_data:/app/01_source_data
+      # Mount dbt project for dbt assets integration
+      - ./04_dbt:/app/04_dbt
       # Mount Dagster home for persistent run history, schedules, and metadata
       - ./03_dagster/dagster_home:/opt/dagster/dagster_home
     environment:
@@ -69,6 +71,19 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis: Caching and Message Queue for Superset
+  # Essential for Superset's performance and async operations
+  redis:
+    image: redis:7-alpine
+    networks:
+      - proto_loc_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   # Superset: Data Visualization and BI Platform
   # Used for creating interactive dashboards and charts
   
@@ -79,12 +94,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis: # Add Redis as a dependency
+        condition: service_healthy
     ports:
       - "${SUPERSET_PORT:-8088}:8088"  # Expose Superset UI on configurable port (default: 8088)
     volumes:
-
-      # Mounts the DuckDB databases for data access (read-only for safety)
-      - ./02_duck_db:/app/02_duck_db:ro
+      # Mount DuckDB databases - file system needs write access for DuckDB housekeeping (.wal files)
+      # Read-only access is enforced at the DuckDB connection level, not file system level
+      - ./02_duck_db:/app/02_duck_db
     environment:
       # PostgreSQL connection for Superset metadata
       - SUPERSET_POSTGRES_HOST=postgres
@@ -97,6 +114,14 @@ services:
       - SUPERSET_USERNAME=${SUPERSET_USERNAME:-admin}
       - SUPERSET_PASSWORD=${SUPERSET_PASSWORD:-admin}
       - SUPERSET_EMAIL=${SUPERSET_EMAIL:-admin@example.com}
+      # Redis connection for caching and async
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      # Override hardcoded Redis configurations in Superset 5.0.0
+      - REDIS_URL=redis://redis:6379/0
+      - CACHE_REDIS_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
       # DuckDB database paths for analytics data connections
       - DUCKDB_RAW_PATH=${DUCKDB_RAW_PATH:-/app/02_duck_db/01_raw/raw.duckdb}
       - DUCKDB_DEV_PATH=${DUCKDB_DEV_PATH:-/app/02_duck_db/02_dev/dev.duckdb}
@@ -119,15 +144,24 @@ services:
       dockerfile: Dockerfile
     ports:
       - "${CUBE_PORT:-4000}:4000"  # Expose Cube API on configurable port (default: 4000)
+      - "${CUBE_SQL_PORT:-15432}:15432"  # Expose Cube SQL interface for Superset
     volumes:
-      # Mount Cube schema definitions for live development
-      - ./05_cube_dev:/app/05_cube_dev
-      # Mount DuckDB databases in read-only mode (Cube only reads from prod)
-      - ./02_duck_db:/app/02_duck_db:ro
+      # Mount source code with node_modules volume to prevent conflicts
+      - ./05_cube_dev:/app
+      - /app/node_modules  # Anonymous volume to preserve node_modules
+      - ./02_duck_db:/app/02_duck_db
     environment:
+      # Standard Cube.js environment variables
       - CUBEJS_DB_TYPE=duckdb
-      # Cube connects only to production database for stable API
-      - CUBEJS_DB_PATH=${DUCKDB_PROD_PATH:-/app/02_duck_db/03_prod/prod.duckdb}
+      - CUBEJS_DB_PATH=/app/02_duck_db/02_dev/dev.duckdb
+      - CUBEJS_DB_DUCKDB_DATABASE_PATH=/app/02_duck_db/02_dev/dev.duckdb
+      - CUBEJS_DB_SCHEMA=main
+      - CUBEJS_API_SECRET=${CUBE_API_SECRET:-dev-secret-change-in-production}
+      - CUBEJS_DEV_MODE=true
+      - CUBEJS_LOG_LEVEL=debug
+      - DEBUG=cubejs:*
+      - CUBEJS_DB_AUTO_SCHEMA=true
+      - NODE_ENV=development
     networks:
       - proto_loc_network
     restart: unless-stopped
