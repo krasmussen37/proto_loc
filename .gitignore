@@ -42,6 +42,11 @@
 # Dagster runtime data and logs
 03_dagster/dagster_home/
 !03_dagster/dagster_home/.gitkeep
+
+# SQLite database files (binary, not suitable for git)
+*.db
+*.sqlite
+*.sqlite3
 03_dagster/01_source_data/
 03_dagster/02_duck_db/
 
